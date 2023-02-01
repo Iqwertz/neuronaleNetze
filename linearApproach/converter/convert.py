@@ -19,7 +19,7 @@ for i, d in enumerate(raw_data_array_xy):
     all_map_xy.append(d.reshape(16, 32))
 
 
-del all_map_xy[5:]
+del all_map_xy[20:]
 
 jsonString = '{"data":['
 

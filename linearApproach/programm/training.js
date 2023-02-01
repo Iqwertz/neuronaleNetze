@@ -7,61 +7,87 @@ for (let set of json.data) {
     printStats(set)
 }
 
-
-function linearFit(array) {
-    //The function returns an array of size 3. The first element is the intercept, the second element is the slope and the third element is the correlation coefficient.
-
-    let x = [];
-    let y = [];
-    let x2 = [];
-    let y2 = [];
-    let xy = [];
-    let n = 0;
-    let sumX = 0;
-    let sumY = 0;
-    let sumX2 = 0;
-    let sumY2 = 0;
-    let sumXY = 0;
-    let a = 0;
-    let b = 0;
-    let r = 0;
-
+function findStartPoint(array) {
+    let startPoint = [];
     for (let line of array) {
-        for (let value of line) {
+        for (let i = line.length - 1; i >= 0; i--) {
+            let value = line[i];
             if (value != 0) {
-                x.push(line.indexOf(value));
-                y.push(array.indexOf(line));
+                startPoint.push(line.indexOf(value));
+                startPoint.push(array.indexOf(line));
+                return startPoint;
             }
         }
     }
+}
 
-    n = x.length;
-
-    for (let i = 0; i < n; i++) {
-        x2.push(x[i] * x[i]);
-        y2.push(y[i] * y[i]);
-        xy.push(x[i] * y[i]);
+function findEndPoint(array) {
+    let endPoint = [];
+    for (let i = array.length - 1; i >= 0; i--) {
+        let line = array[i];
+        for (let value of line) {
+            if (value != 0) {
+                endPoint.push(line.indexOf(value));
+                endPoint.push(array.indexOf(line));
+            }
+        }
     }
+    return endPoint;
+}
 
-    for (let i = 0; i < n; i++) {
-        sumX += x[i];
-        sumY += y[i];
-        sumX2 += x2[i];
-        sumY2 += y2[i];
-        sumXY += xy[i];
+function calculateSlope(array) {
+    let startPoint = findStartPoint(array);
+    let endPoint = findEndPoint(array);
+    let slope = (endPoint[1] - startPoint[1]) / (endPoint[0] - startPoint[0]);
+    return slope;
+}
+
+
+function linearRegression(inputArray) {
+
+    let x = [];
+    let y = [];
+
+    for (let line of inputArray) {
+        for (let value of line) {
+            if (value != 0) {
+                x.push(line.indexOf(value));
+                y.push(inputArray.indexOf(line));
+            }
+        }
     }
-
-    a = (sumY * sumX2 - sumX * sumXY) / (n * sumX2 - sumX * sumX);
-    b = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-    r = (n * sumXY - sumX * sumY) / Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
-
-    return [a, b, r];
+    const sumX = x.reduce((prev, curr) => prev + curr, 0);
+    const avgX = sumX / x.length;
+    const xDifferencesToAverage = x.map((value) => avgX - value);
+    const xDifferencesToAverageSquared = xDifferencesToAverage.map(
+        (value) => value ** 2
+    );
+    const SSxx = xDifferencesToAverageSquared.reduce(
+        (prev, curr) => prev + curr,
+        0
+    );
+    const sumY = y.reduce((prev, curr) => prev + curr, 0);
+    const avgY = sumY / y.length;
+    const yDifferencesToAverage = y.map((value) => avgY - value);
+    const xAndYDifferencesMultiplied = xDifferencesToAverage.map(
+        (curr, index) => curr * yDifferencesToAverage[index]
+    );
+    const SSxy = xAndYDifferencesMultiplied.reduce(
+        (prev, curr) => prev + curr,
+        0
+    );
+    const slope = SSxy / SSxx;
+    const intercept = avgY - slope * avgX;
+    return [intercept, slope];
 }
 
 
 
 function printStats(array) {
-    let linReg = linearFit(array.values)
+
+    let simpleSlope = calculateSlope(array.values);
+    let simpleAngle = Math.atan(simpleSlope) * 180 / Math.PI;
+    let linReg = linearRegression(array.values);
 
     angle = Math.atan(linReg[1]) * 180 / Math.PI;
 
@@ -70,14 +96,16 @@ function printStats(array) {
     console.log("Number of Lines: " + array.values.length);
     console.log("Number of Columns: " + array.values[0].length);
     console.log("Linear Regression: ");
-    console.log("Intercept " + linReg[0]);
-    console.log("Slope: " + linReg[1]);
-    console.log("Error: " + linReg[2]);
-    console.log("Angle: " + angle);
+    console.log("   Intercept " + linReg[0]);
+    console.log("   Slope: " + linReg[1]) * -1;
+    console.log("   Angle: " + angle * -1);
+    console.log("Simple Approach: ");
+    console.log("   Slope: " + simpleSlope * -1);
+    console.log("   Angle: " + simpleAngle * -1);
     console.log(" ")
     console.log("Set Data Points: " + array.startPoint);
     console.log("Set Direction: " + array.startDir);
-    console.log("Set Angle: " + Math.atan(array.startDir[0] / array.startDir[1]) * 180 / Math.PI);
+    console.log("Set Angle: " + (180 + array.startDir[0][0] * 180 / Math.PI));
     console.log("-------------------------------------------");
 }
 
@@ -90,9 +118,8 @@ function printStats(array) {
 function printArray(array) {
 
     console.log("--------------------Print Array-----------------------");
-    console.log(" ")
-
     let lineOut = "";
+    let index = 0;
     for (let line of array) {
         for (let value of line) {
             if (value == 0) {
@@ -102,9 +129,9 @@ function printArray(array) {
             }
         }
         console.log(lineOut);
+        index++;
         lineOut = "";
     }
-    console.log(" ")
     console.log("-------------------------------------------");
 
 }
